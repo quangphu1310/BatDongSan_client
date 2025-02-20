@@ -7,6 +7,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { error } from 'console';
 import { get } from 'http';
+import { title } from 'process';
 
 type Props = {};
 
@@ -23,10 +24,10 @@ type FieldType = {
 
 
 
-export default function Products({ }: Props) {
+export default function Propertys({ }: Props) {
     const [property, setProperty] = React.useState([]);
     const [addProperty, setAddProperty] = React.useState(false);
-    const [selectedProduct, setSelectedProduct] = React.useState<any>(null);
+    const [selectedProperty, setSelectedProperty] = React.useState<any>(null);
     const [createForm] = Form.useForm<FieldType>();
     const [updateForm] = Form.useForm<FieldType>();
     const [selectedProvince, setSelectedProvince] = React.useState<string | null>(null); // Lưu tỉnh đã chọn
@@ -57,6 +58,20 @@ export default function Products({ }: Props) {
             const response = await axiosClient.get(`/api/district/${provinceId}`);
             const data = response.data.result;
             setDistrict(data);
+        } catch (error) {
+            console.log('Error:', error);
+        }
+    }
+
+    const uploadImage = async (file: any) => {
+        try {
+            const formData = new FormData();
+            const id = selectedProperty?.id;
+            formData.append('files', file);
+            console.log("FormData New Image:", file);
+            await axiosClient.post(`/api/PropertyImage/${id}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
         } catch (error) {
             console.log('Error:', error);
         }
@@ -121,9 +136,9 @@ export default function Products({ }: Props) {
 
     const onDelete = async (id: number) => {
         try {
-            await axiosClient.delete(`/products/${id}`);
+            await axiosClient.delete(`/api/property/${id}`);
             getProperty();
-            message.success('Product deleted successfully!');
+            message.success('Property deleted successfully!');
         } catch (error) {
             console.log('Error:', error);
         }
@@ -132,10 +147,23 @@ export default function Products({ }: Props) {
     const onUpdate = async (values: any) => {
         try {
             console.log('Success:', values);
-            await axiosClient.patch(`/products/${selectedProduct._id}`, values);
+            if (values.Files?.fileList) {
+                for (const file of values.Files.fileList) {
+                    await uploadImage(file.originFileObj || file); // ✅ Gửi từng file riêng lẻ
+                }
+            }
+            const data = {
+                title: values.Title,
+                price: values.Price,
+                square: values.Square,
+                rooms: values.Rooms,
+                address: values.Address,
+                districtId: values.DistrictId,
+            }
+            await axiosClient.put(`/api/property/${selectedProperty.id}`, data);
             getProperty();
-            setSelectedProduct(null);
-            message.success('Product updated successfully!');
+            setSelectedProperty(null);
+            message.success('Property updated successfully!');
         } catch (error) {
             console.log('Error:', error);
         }
@@ -268,15 +296,41 @@ export default function Products({ }: Props) {
                             type='primary'
                             icon={<EditOutlined />}
                             onClick={() => {
-                                setSelectedProduct(record);
-                                updateForm.setFieldsValue(record);
+                                setSelectedProperty(record);
+                                console.log(record);
+                                // Chuyển đổi dữ liệu trước khi đặt vào form
+                                const formData = {
+                                    Title: record.title,
+                                    Price: record.price,
+                                    Square: record.square,
+                                    Rooms: record.rooms,
+                                    Address: record.address,
+                                    DistrictId: record.district?.id?.toString() || "", // Chỉ lưu ID dạng string
+                                    ProvinceId: record.district?.province?.id?.toString() || "", // Chỉ lưu ID dạng string
+                                    Files: record.propertyImages.map((img: { imageUrl: string }) => ({
+                    
+                                        uid: img.imageUrl, // Định danh duy nhất
+                                        name: img.imageUrl.split('/').pop(), // Tên file từ URL
+                                        status: "done", // Đánh dấu là đã upload
+                                        url: img.imageUrl, // Hiển thị ảnh
+                                    })),
+                                };
+
+                                console.log("Form Data:", formData);
+
+                                updateForm.setFieldsValue(formData);
+                                setFileList(formData.Files);
+
+
+
+
                             }}
                         />
                         <Popconfirm
-                            title='Delete the product'
-                            description='Are you sure to delete this product?'
+                            title='Delete the property'
+                            description='Are you sure to delete this property?'
                             onConfirm={() => {
-                                onDelete(record._id);
+                                onDelete(record.id);
                             }}
                         >
                             <Button type='primary' danger icon={<DeleteOutlined />} />
@@ -351,7 +405,7 @@ export default function Products({ }: Props) {
                             onChange={(value) => {
                                 setSelectedProvince(value);
                                 setDistrict([]); // Xóa hết quận/huyện cũ
-                                updateForm.setFieldsValue({ DistrictId: undefined }); // Xóa giá trị đã chọn của quận/huyện
+                                createForm.setFieldsValue({ DistrictId: undefined }); // Xóa giá trị đã chọn của quận/huyện
                                 getDistrict(value); // Gọi API lấy danh sách quận/huyện mới
                             }}
                         />
@@ -370,9 +424,7 @@ export default function Products({ }: Props) {
                                 label: item.name,
                                 value: item.id,
                             }))}
-                            onChange={() => {
-                                updateForm.setFieldsValue({ DistrictId: undefined }); // Xóa giá trị đã chọn khi thay đổi huyện
-                            }}
+
                         />
                     </Form.Item>
 
@@ -404,60 +456,118 @@ export default function Products({ }: Props) {
 
 
 
-            {/* <Modal
-        centered
-        title='Edit product'
-        open={selectedProduct}
-        okText='Save changes'
-        onOk={() => {
-          updateForm.submit();
+            <Modal
+                centered
+                title='Edit Property'
+                open={selectedProperty}
+                okText='Save changes'
+                onOk={() => {
+                    updateForm.submit();
+                }}
+                onCancel={() => {
+                    setSelectedProperty(null);
+                }}
+            >
+                <Form form={updateForm} name='Edit-Property' labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} onFinish={onUpdate}>
+
+
+                    <Form.Item<FieldType> label='Title' name='Title' rules={[{ required: true }]} hasFeedback>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item<FieldType> label='Price' name='Price' rules={[{ required: true }]} hasFeedback>
+                        <InputNumber min={0} />
+                    </Form.Item>
+
+                    <Form.Item<FieldType> label='Square' name='Square' rules={[{ required: true }]} hasFeedback>
+                        <InputNumber min={0} max={90} />
+                    </Form.Item>
+                    <Form.Item<FieldType> label='Rooms' name='Rooms' rules={[{ required: true }]} hasFeedback>
+                        <InputNumber min={0} />
+                    </Form.Item>
+                    <Form.Item<FieldType> label='Address' name='Address' rules={[{ required: true }]} hasFeedback>
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item<FieldType>
+                        name="ProvinceId"
+                        label="Name Province"
+                        rules={[{ required: true }]}
+                        hasFeedback
+                    >
+                        <Select
+                            labelInValue // Thêm thuộc tính này để nhận object { label, value }
+                            options={province.map((item: any) => ({
+                                label: item.name,
+                                value: item.id.toString(),
+                            }))}
+                            onChange={(value) => {
+                                setSelectedProvince(value);
+                                setDistrict([]);
+                                updateForm.setFieldsValue({ DistrictId: undefined });
+                                getDistrict(value.value); // Lấy ID từ object { label, value }
+                            }}
+                        />
+                    </Form.Item>
+
+
+                    <Form.Item<FieldType>
+                        name="DistrictId"
+                        label="Name District"
+                        rules={[{ required: true }]}>
+                        <Select
+                            labelInValue // Thêm thuộc tính này để nhận object { label, value }
+                            options={district.map((item: any) => ({
+                                label: item.name, // Hiển thị tên quận/huyện
+                                value: item.id.toString(), // Giá trị lưu vào form là ID (string)
+                            }))}
+
+                        />
+                    </Form.Item>
+
+
+
+
+                    <Form.Item<FieldType> name="Files" label="Upload Files">
+    <Upload
+        multiple
+        listType="picture-card" // Hiển thị ảnh dạng thẻ
+        beforeUpload={() => false} // Ngăn chặn tự động upload
+        onChange={(info) => {
+            console.log("File chọn:", info.fileList);
+            setFileList(info.fileList);
         }}
-        onCancel={() => {
-          setSelectedProduct(null);
+        onRemove={async (file) => {
+            try {
+                // Lấy ID của ảnh từ URL hoặc dữ liệu của file
+                const imageId = file.uid; 
+
+                // Gọi API xóa ảnh
+                const response = await axiosClient.delete(`/api/property/${imageId}`);
+
+                console.log("Xóa ảnh:", response.data);
+
+                // Nếu xóa thành công, cập nhật lại danh sách ảnh
+                setFileList((prev) => prev.filter((item) => item.uid !== file.uid));
+            } catch (error) {
+                console.error("Lỗi khi xóa ảnh:", error);
+            }
         }}
-      >
-        <Form form={updateForm} name='update-product' labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} initialValues={{ name: '', description: '' }} onFinish={onUpdate}>
-          <Form.Item<FieldType> name='categoryId' label='Category' rules={[{ required: true }]} hasFeedback>
-            <Select
-              options={categories.map((item: any) => {
-                return {
-                  label: item.name,
-                  value: item._id,
-                };
-              })}
-            />
-          </Form.Item>
+        fileList={fileList} // Đảm bảo fileList có dữ liệu
+    >
+        {fileList.length >= 8 ? null : (
+            <div>
+                <UploadOutlined />
+                <div style={{ marginTop: 8 }}>Upload</div>
+            </div>
+        )}
+    </Upload>
+</Form.Item>
 
-          <Form.Item<FieldType> name='supplierId' label='Supplier' rules={[{ required: true }]} hasFeedback>
-            <Select
-              options={suppliers.map((item: any) => {
-                return {
-                  label: item.name,
-                  value: item._id,
-                };
-              })}
-            />
-          </Form.Item>
 
-          <Form.Item<FieldType> label='Name' name='name' rules={[{ required: true }]} hasFeedback>
-            <Input />
-          </Form.Item>
-          <Form.Item<FieldType> label='Price' name='price' rules={[{ required: true }]} hasFeedback>
-            <InputNumber min={0} />
-          </Form.Item>
 
-          <Form.Item<FieldType> label='Discount' name='discount' rules={[{ required: true }]} hasFeedback>
-            <InputNumber min={0} max={90} />
-          </Form.Item>
-          <Form.Item<FieldType> label='Stock' name='stock' rules={[{ required: true }]} hasFeedback>
-            <InputNumber min={0} />
-          </Form.Item>
 
-          <Form.Item<FieldType> label='Description' name='description'>
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal> */}
+                </Form>
+            </Modal>
         </div>
     );
 }
