@@ -279,7 +279,7 @@ export default function Propertys({ }: Props) {
             width: '10%',
         },
         {
-            title: 'Quận/ huyện',
+            title: 'Tỉnh/ thành phố',
             dataIndex: 'district', // Giữ nguyên dataIndex để lấy từ district
             key: 'province',
             width: '1%',
@@ -296,7 +296,7 @@ export default function Propertys({ }: Props) {
         },
 
         {
-            title: 'Tỉnh/ thành phố',
+            title: 'Quận/ huyện',
             dataIndex: 'district',
             key: 'district',
             width: '1%',
