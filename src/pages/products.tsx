@@ -534,54 +534,69 @@ export default function Propertys({ }: Props) {
                 </Form>
             </Modal>
 
-            {/* Bộc lọc */}
-            <Form layout="inline" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '30px 0' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px' }}>
-                    <Form.Item label="Tên tòa nhà">
+            <Form
+                layout="inline"
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '16px',
+                    margin: '30px 0',
+                }}
+            >
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)', // 2 cột
+                        gap: '16px',
+                        width: '100%',
+                        maxWidth: '800px', // Giới hạn độ rộng
+                    }}
+                >
+                    <Form.Item label="Tên tòa nhà" labelCol={{ span: 8 }} style={{ width: '100%' }}>
                         <Input value={filters.title} onChange={(e) => handleFilterChange('title', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Số phòng">
+                    <Form.Item label="Số phòng" labelCol={{ span: 8 }} style={{ width: '100%' }}>
                         <Input value={filters.room} onChange={(e) => handleFilterChange('room', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Diện tích (Min)">
+                    <Form.Item label="Diện tích (Min)" labelCol={{ span: 8 }} style={{ width: '100%' }}>
                         <Input value={filters.fromSquare} onChange={(e) => handleFilterChange('fromSquare', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Diện tích (Max)">
+                    <Form.Item label="Diện tích (Max)" labelCol={{ span: 8 }} style={{ width: '100%' }}>
                         <Input value={filters.toSquare} onChange={(e) => handleFilterChange('toSquare', e.target.value)} />
                     </Form.Item>
-                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-                    <Form.Item label="Giá (Mix)">
+                    <Form.Item label="Giá (Min)" labelCol={{ span: 8 }} style={{ width: '100%' }}>
                         <Input value={filters.fromPrice} onChange={(e) => handleFilterChange('fromPrice', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Giá (Max)">
+                    <Form.Item label="Giá (Max)" labelCol={{ span: 8 }} style={{ width: '100%' }}>
                         <Input value={filters.toPrice} onChange={(e) => handleFilterChange('toPrice', e.target.value)} />
                     </Form.Item>
-
-                    {/* Reset Form */}
-
-                    <Button
-                        type="primary"
-                        onClick={() => {
-                            setFilters({
-                                title: '',
-                                room: '',
-                                fromSquare: '',
-                                toSquare: '',
-                                fromPrice: '',
-                                toPrice: '',
-                            });
-                        }}
-                    >
-                        Làm mới
-                    </Button>
                 </div>
+
+                {/* Reset Form */}
+                <Button
+                    type="primary"
+                    onClick={() => {
+                        setFilters({
+                            title: '',
+                            room: '',
+                            fromSquare: '',
+                            toSquare: '',
+                            fromPrice: '',
+                            toPrice: '',
+                        });
+                    }}
+                >
+                    Làm mới
+                </Button>
             </Form>
+
+
 
             <Card title='Quản lý bất động sản' style={{ width: '100%', marginTop: 36 }}>
                 <Table dataSource={property} columns={columns} />
