@@ -227,7 +227,7 @@ export default function Propertys({ }: Props) {
             //   ),
         },
         {
-            title: 'Picture',
+            title: 'Ảnh',
             key: 'propertyImages',
             dataIndex: 'propertyImages',
             width: '5%',
@@ -246,40 +246,40 @@ export default function Propertys({ }: Props) {
             ),
         },
         {
-            title: 'Title',
+            title: 'Tên tòa nhà',
             dataIndex: 'title',
             key: 'title',
             width: '10%',
         },
         {
-            title: 'Price',
+            title: 'Giá',
             dataIndex: 'price',
             key: 'price',
             width: '1%',
             sorter: (a: any, b: any) => a.price - b.price,
         },
         {
-            title: 'Square',
+            title: 'Diện tích',
             dataIndex: 'square',
             key: 'square',
             width: '1%',
             sorter: (a: any, b: any) => a.square - b.square,
         },
         {
-            title: 'Rooms',
+            title: 'Số phòng',
             dataIndex: 'rooms',
             key: 'rooms',
             width: '1%',
             sorter: (a: any, b: any) => a.rooms - b.rooms,
         },
         {
-            title: 'Address',
+            title: 'Địa chỉ',
             dataIndex: 'address',
             key: 'address',
             width: '10%',
         },
         {
-            title: 'Province',
+            title: 'Quận/ huyện',
             dataIndex: 'district', // Giữ nguyên dataIndex để lấy từ district
             key: 'province',
             width: '1%',
@@ -296,7 +296,7 @@ export default function Propertys({ }: Props) {
         },
 
         {
-            title: 'District',
+            title: 'Tỉnh/ thành phố',
             dataIndex: 'district',
             key: 'district',
             width: '1%',
@@ -312,7 +312,7 @@ export default function Propertys({ }: Props) {
             ),
         },
         {
-            title: 'Posted Date',
+            title: 'Ngày đăng',
             dataIndex: 'postedDate',
             key: 'postedDate',
             width: '1%',
@@ -330,7 +330,7 @@ export default function Propertys({ }: Props) {
             ),
         },
         {
-            title: 'Actions',
+            title: 'Tùy chọn',
             dataIndex: 'actions',
             key: 'actions',
             width: '1%',
@@ -388,19 +388,14 @@ export default function Propertys({ }: Props) {
         },
     ];
 
-
-
     return (
-
-
         <div style={{ padding: 36 }}>
             <Button type='primary' htmlType='submit' onClick={() => {
                 setFileList([]);
                 setAddProperty(true)
             }
-
             }>
-                Add Property
+                Thêm mới
             </Button>
 
             <Modal
@@ -408,7 +403,7 @@ export default function Propertys({ }: Props) {
                 title='Add Property'
                 open={addProperty}
                 okText='Save changes'
-                okButtonProps={{ loading: loading }} 
+                okButtonProps={{ loading: loading }}
                 onOk={() => {
                     setLoading(true);
                     createForm.submit();
@@ -542,29 +537,29 @@ export default function Propertys({ }: Props) {
             {/* Bộc lọc */}
             <Form layout="inline" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '30px 0' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px' }}>
-                    <Form.Item label="Title">
+                    <Form.Item label="Tên tòa nhà">
                         <Input value={filters.title} onChange={(e) => handleFilterChange('title', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Rooms">
+                    <Form.Item label="Số phòng">
                         <Input value={filters.room} onChange={(e) => handleFilterChange('room', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Square (From)">
+                    <Form.Item label="Diện tích (Min)">
                         <Input value={filters.fromSquare} onChange={(e) => handleFilterChange('fromSquare', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Square (To)">
+                    <Form.Item label="Diện tích (Max)">
                         <Input value={filters.toSquare} onChange={(e) => handleFilterChange('toSquare', e.target.value)} />
                     </Form.Item>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-                    <Form.Item label="Price (From)">
+                    <Form.Item label="Giá (Mix)">
                         <Input value={filters.fromPrice} onChange={(e) => handleFilterChange('fromPrice', e.target.value)} />
                     </Form.Item>
 
-                    <Form.Item label="Price (To)">
+                    <Form.Item label="Giá (Max)">
                         <Input value={filters.toPrice} onChange={(e) => handleFilterChange('toPrice', e.target.value)} />
                     </Form.Item>
 
@@ -583,12 +578,12 @@ export default function Propertys({ }: Props) {
                             });
                         }}
                     >
-                        Reset
+                        Làm mới
                     </Button>
                 </div>
             </Form>
 
-            <Card title='List of property' style={{ width: '100%', marginTop: 36 }}>
+            <Card title='Quản lý bất động sản' style={{ width: '100%', marginTop: 36 }}>
                 <Table dataSource={property} columns={columns} />
             </Card>
 
@@ -714,10 +709,6 @@ export default function Propertys({ }: Props) {
                             )}
                         </Upload>
                     </Form.Item>
-
-
-
-
                 </Form>
             </Modal>
         </div>
