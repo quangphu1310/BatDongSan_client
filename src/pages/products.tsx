@@ -305,16 +305,16 @@ export default function Propertys({ }: Props) {
                                     Square: record.square,
                                     Rooms: record.rooms,
                                     Address: record.address,
-                                    DistrictId: record.district?.id?.toString() || "", // Chỉ lưu ID dạng string
-                                    ProvinceId: record.district?.province?.id?.toString() || "", // Chỉ lưu ID dạng string
-                                    Files: record.propertyImages.map((img: { imageUrl: string }) => ({
-                    
-                                        uid: img.imageUrl, // Định danh duy nhất
-                                        name: img.imageUrl.split('/').pop(), // Tên file từ URL
-                                        status: "done", // Đánh dấu là đã upload
-                                        url: img.imageUrl, // Hiển thị ảnh
+                                    DistrictId: record.district?.id?.toString() || "",
+                                    ProvinceId: record.district?.province?.id?.toString() || "",
+                                    Files: record.propertyImages.map((img: { id: number; imageUrl: string }) => ({
+                                        uid: img.id.toString(), // ✅ Đặt uid là id từ database
+                                        name: img.imageUrl.split('/').pop(),
+                                        status: "done",
+                                        url: img.imageUrl,
                                     })),
                                 };
+                                // updateForm.setFieldsValue(formData);
 
                                 console.log("Form Data:", formData);
 
@@ -345,7 +345,7 @@ export default function Propertys({ }: Props) {
 
     return (
 
-
+        
         <div style={{ padding: 36 }}>
             <Button type='primary' htmlType='submit' onClick={() => setAddProperty(true)}>
                 Add Property
@@ -528,40 +528,39 @@ export default function Propertys({ }: Props) {
 
 
                     <Form.Item<FieldType> name="Files" label="Upload Files">
-    <Upload
-        multiple
-        listType="picture-card" // Hiển thị ảnh dạng thẻ
-        beforeUpload={() => false} // Ngăn chặn tự động upload
-        onChange={(info) => {
-            console.log("File chọn:", info.fileList);
-            setFileList(info.fileList);
-        }}
-        onRemove={async (file) => {
-            try {
-                // Lấy ID của ảnh từ URL hoặc dữ liệu của file
-                const imageId = file.uid; 
-
-                // Gọi API xóa ảnh
-                const response = await axiosClient.delete(`/api/property/${imageId}`);
-
-                console.log("Xóa ảnh:", response.data);
-
-                // Nếu xóa thành công, cập nhật lại danh sách ảnh
-                setFileList((prev) => prev.filter((item) => item.uid !== file.uid));
-            } catch (error) {
-                console.error("Lỗi khi xóa ảnh:", error);
-            }
-        }}
-        fileList={fileList} // Đảm bảo fileList có dữ liệu
-    >
-        {fileList.length >= 8 ? null : (
-            <div>
-                <UploadOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
-            </div>
-        )}
-    </Upload>
-</Form.Item>
+                        <Upload
+                            multiple
+                            listType="picture-card" // Hiển thị ảnh dạng thẻ
+                            beforeUpload={() => false} // Ngăn chặn tự động upload
+                            onChange={(info) => {
+                                console.log("File chọn:", info.fileList);
+                                setFileList(info.fileList);
+                            }}
+                            onRemove={async (file) => {
+                                try {
+                                    const imageId = file.uid; // ✅ UID đã là ID của ảnh trong database
+                            
+                                    // Gọi API xóa ảnh
+                                    const response = await axiosClient.delete(`/api/propertyimage/${imageId}`);
+                            
+                                    console.log("Xóa ảnh:", response.data);
+                            
+                                    // Nếu xóa thành công, cập nhật lại danh sách ảnh
+                                    setFileList((prev) => prev.filter((item) => item.uid !== file.uid));
+                                } catch (error) {
+                                    console.error("Lỗi khi xóa ảnh:", error);
+                                }
+                            }}
+                            fileList={fileList} // Đảm bảo fileList có dữ liệu
+                        >
+                            {fileList.length >= 8 ? null : (
+                                <div>
+                                    <UploadOutlined />
+                                    <div style={{ marginTop: 8 }}>Upload</div>
+                                </div>
+                            )}
+                        </Upload>
+                    </Form.Item>
 
 
 

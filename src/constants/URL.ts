@@ -1,1 +1,1 @@
-export const BASE_URL = 'http://batdongsan.runasp.net';
+export const BASE_URL = 'https://batdongsan.runasp.net/';
