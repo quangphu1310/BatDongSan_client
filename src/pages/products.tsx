@@ -1,6 +1,7 @@
 import { Button, Card, Form, Input, Space, Table, Popconfirm, message, Modal, InputNumber, Select, Upload } from 'antd';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { axiosClient } from '.././libraries/axiosClient';
+import { notification } from "antd";
 import { DeleteOutlined, EditOutlined, UploadOutlined } from '@ant-design/icons';
 import numeral from 'numeral';
 import axios from 'axios';
@@ -20,6 +21,7 @@ type FieldType = {
     DistrictId: string;
     ProvinceId: string;
     Files?: any;
+    District: { id: string, name: string };
 };
 
 
@@ -33,8 +35,40 @@ export default function Propertys({ }: Props) {
     const [selectedProvince, setSelectedProvince] = React.useState<string | null>(null); // Lưu tỉnh đã chọn
     const [province, setProvince] = React.useState([]);
     const [district, setDistrict] = React.useState([]);
-
     const [fileList, setFileList] = React.useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [filters, setFilters] = useState({
+        title: '',
+        room: '',
+        fromSquare: '',
+        toSquare: '',
+        fromPrice: '',
+        toPrice: '',
+    });
+
+    // Gọi API lấy dữ liệu với bộ lọc
+    const fetchProperties = async () => {
+        try {
+            const { title, room, fromSquare, toSquare, fromPrice, toPrice } = filters;
+            const response = await axiosClient.get(`/api/property`, {
+                params: { title, room, fromSquare, toSquare, fromPrice, toPrice },
+            });
+            setProperty(response.data.result.data);
+        } catch (error) {
+            console.log('Error:', error);
+        }
+    };
+
+    // Gọi API mỗi khi filters thay đổi
+    useEffect(() => {
+        fetchProperties();
+    }, [filters]);
+
+    // Xử lý thay đổi bộ lọc
+    const handleFilterChange = (field: string, value: string) => {
+        setFilters((prev) => ({ ...prev, [field]: value }));
+    };
+
 
     const getProperty = async () => {
         try {
@@ -108,25 +142,20 @@ export default function Propertys({ }: Props) {
                 console.log("Không có file nào được chọn.");
                 return;
             }
-
-            console.log("Danh sách files:", values.Files);
             values.Files.fileList.forEach((file: any) => {
                 console.log("File thực tế:", file.originFileObj || file);
                 formData.append("Files", file.originFileObj || file);
             });
-
-
             // Kiểm tra nội dung FormData
             console.log("FormData Entries:", Array.from(formData.entries()));
-
             const response = await axiosClient.post("/api/property", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-
-            console.log("Response:", response.data);
             setFileList([]); // Xóa danh sách file đã chọn
             createForm.resetFields();
             getProperty();
+            setAddProperty(false);
+            setLoading(false);
         } catch (error: any) {
             console.log("Lỗi:", error.response?.data || error.message);
         }
@@ -163,7 +192,23 @@ export default function Propertys({ }: Props) {
             await axiosClient.put(`/api/property/${selectedProperty.id}`, data);
             getProperty();
             setSelectedProperty(null);
-            message.success('Property updated successfully!');
+            setLoading(false);
+            setTimeout(() => {
+                setLoading(false);
+                setSelectedProperty(null);
+                console.log("Cập nhật thành công:", data);
+
+                // 🎉 Thông báo cập nhật thành công
+                notification.success({
+                    message: "Cập nhật thành công!",
+                    description: "Thông tin đã được cập nhật thành công.",
+                    placement: "topRight",
+                    duration: 10, // Hiển thị trong 3 giây
+                });
+
+            }, 2000); // Giả lập API call
+            // Giả lập API call
+
         } catch (error) {
             console.log('Error:', error);
         }
@@ -314,6 +359,8 @@ export default function Propertys({ }: Props) {
                                         url: img.imageUrl,
                                     })),
                                 };
+                                console.log("Province:", formData.ProvinceId);
+                                getDistrict(formData.ProvinceId); // Lấy danh sách quận/huyện theo tỉnh đã chọn
                                 // updateForm.setFieldsValue(formData);
 
                                 console.log("Form Data:", formData);
@@ -345,9 +392,14 @@ export default function Propertys({ }: Props) {
 
     return (
 
-        
+
         <div style={{ padding: 36 }}>
-            <Button type='primary' htmlType='submit' onClick={() => setAddProperty(true)}>
+            <Button type='primary' htmlType='submit' onClick={() => {
+                setFileList([]);
+                setAddProperty(true)
+            }
+
+            }>
                 Add Property
             </Button>
 
@@ -356,10 +408,10 @@ export default function Propertys({ }: Props) {
                 title='Add Property'
                 open={addProperty}
                 okText='Save changes'
+                okButtonProps={{ loading: loading }} 
                 onOk={() => {
+                    setLoading(true);
                     createForm.submit();
-                    setAddProperty(false);
-
                     //   if(error){
                     //     console.log('Error:', error);
                     //   }
@@ -369,6 +421,7 @@ export default function Propertys({ }: Props) {
                 }}
                 onCancel={() => {
                     setAddProperty(false);
+                    setLoading(false);
                 }}
             >
                 <Form form={createForm} name='Add-Property' labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} onFinish={onFinish}>
@@ -430,7 +483,7 @@ export default function Propertys({ }: Props) {
 
 
 
-                    <Form.Item<FieldType> name="Files" label="Upload Files">
+                    {/* <Form.Item<FieldType> name="Files" label="Upload Files">
                         <Upload
                             multiple
                             beforeUpload={() => false} // Ngăn chặn tự động upload
@@ -442,30 +495,128 @@ export default function Propertys({ }: Props) {
                         >
                             <Button icon={<UploadOutlined />}>Click to Upload</Button>
                         </Upload>
+                    </Form.Item> */}
+
+                    <Form.Item<FieldType> name="Files" label="Upload Files">
+                        <Upload
+                            multiple
+                            listType="picture-card" // Hiển thị ảnh dạng thẻ
+                            beforeUpload={() => false} // Ngăn chặn tự động upload
+                            onChange={(info) => {
+                                console.log("File chọn:", info.fileList);
+                                setFileList(info.fileList); // Cập nhật danh sách ảnh
+                            }}
+                            onPreview={async (file) => {
+                                let src = file.url || (file.preview && file.preview);
+                                if (!src) {
+                                    src = await new Promise((resolve) => {
+                                        const reader = new FileReader();
+                                        reader.readAsDataURL(file.originFileObj as Blob);
+                                        reader.onload = () => resolve(reader.result as string);
+                                    });
+                                }
+                                const image = new Image();
+                                image.src = src || '';
+                                const imgWindow = window.open(src);
+                                imgWindow?.document.write(image.outerHTML);
+                            }}
+                            onRemove={(file) => {
+                                setFileList(fileList.filter((item) => item.uid !== file.uid));
+                            }}
+                            fileList={fileList} // Đảm bảo danh sách ảnh có dữ liệu
+                        >
+                            {fileList.length >= 8 ? null : (
+                                <div>
+                                    <UploadOutlined />
+                                    <div style={{ marginTop: 8 }}>Upload</div>
+                                </div>
+                            )}
+                        </Upload>
                     </Form.Item>
+
 
 
                 </Form>
             </Modal>
 
+            {/* Bộc lọc */}
+            <Form layout="inline" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '30px 0' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px' }}>
+                    <Form.Item label="Title">
+                        <Input value={filters.title} onChange={(e) => handleFilterChange('title', e.target.value)} />
+                    </Form.Item>
+
+                    <Form.Item label="Rooms">
+                        <Input value={filters.room} onChange={(e) => handleFilterChange('room', e.target.value)} />
+                    </Form.Item>
+
+                    <Form.Item label="Square (From)">
+                        <Input value={filters.fromSquare} onChange={(e) => handleFilterChange('fromSquare', e.target.value)} />
+                    </Form.Item>
+
+                    <Form.Item label="Square (To)">
+                        <Input value={filters.toSquare} onChange={(e) => handleFilterChange('toSquare', e.target.value)} />
+                    </Form.Item>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+                    <Form.Item label="Price (From)">
+                        <Input value={filters.fromPrice} onChange={(e) => handleFilterChange('fromPrice', e.target.value)} />
+                    </Form.Item>
+
+                    <Form.Item label="Price (To)">
+                        <Input value={filters.toPrice} onChange={(e) => handleFilterChange('toPrice', e.target.value)} />
+                    </Form.Item>
+
+                    {/* Reset Form */}
+
+                    <Button
+                        type="primary"
+                        onClick={() => {
+                            setFilters({
+                                title: '',
+                                room: '',
+                                fromSquare: '',
+                                toSquare: '',
+                                fromPrice: '',
+                                toPrice: '',
+                            });
+                        }}
+                    >
+                        Reset
+                    </Button>
+                </div>
+            </Form>
 
             <Card title='List of property' style={{ width: '100%', marginTop: 36 }}>
                 <Table dataSource={property} columns={columns} />
             </Card>
 
 
-
-
+            {/* Form Edit */}
             <Modal
                 centered
                 title='Edit Property'
                 open={selectedProperty}
                 okText='Save changes'
+                okButtonProps={{ loading: loading }} // Thêm trạng thái loading vào nút OK
                 onOk={() => {
-                    updateForm.submit();
+                    setLoading(true); // Bật loading khi nhấn submit
+                    updateForm
+                        .validateFields()
+                        .then(() => {
+                            updateForm.submit();
+
+
+
+                        })
+                        .catch(() =>
+                            setLoading(false));
+                    // Nếu có lỗi validation thì tắt loading           
                 }}
                 onCancel={() => {
                     setSelectedProperty(null);
+                    setLoading(false); // Tắt loading khi đóng modal
                 }}
             >
                 <Form form={updateForm} name='Edit-Property' labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} onFinish={onUpdate}>
@@ -494,8 +645,7 @@ export default function Propertys({ }: Props) {
                         rules={[{ required: true }]}
                         hasFeedback
                     >
-                        <Select
-                            labelInValue // Thêm thuộc tính này để nhận object { label, value }
+                        <Select                          // Thêm thuộc tính này để nhận object { label, value }
                             options={province.map((item: any) => ({
                                 label: item.name,
                                 value: item.id.toString(),
@@ -513,13 +663,15 @@ export default function Propertys({ }: Props) {
                     <Form.Item<FieldType>
                         name="DistrictId"
                         label="Name District"
-                        rules={[{ required: true }]}>
+                        rules={[{ required: true }]}
+                    >
                         <Select
-                            labelInValue // Thêm thuộc tính này để nhận object { label, value }
+                            // Thêm thuộc tính này để nhận object { label, value }
                             options={district.map((item: any) => ({
-                                label: item.name, // Hiển thị tên quận/huyện
-                                value: item.id.toString(), // Giá trị lưu vào form là ID (string)
+                                label: item.name,
+                                value: item.id.toString(),
                             }))}
+
 
                         />
                     </Form.Item>
@@ -539,12 +691,13 @@ export default function Propertys({ }: Props) {
                             onRemove={async (file) => {
                                 try {
                                     const imageId = file.uid; // ✅ UID đã là ID của ảnh trong database
-                            
+
                                     // Gọi API xóa ảnh
                                     const response = await axiosClient.delete(`/api/propertyimage/${imageId}`);
-                            
+                                    getProperty();
+
                                     console.log("Xóa ảnh:", response.data);
-                            
+
                                     // Nếu xóa thành công, cập nhật lại danh sách ảnh
                                     setFileList((prev) => prev.filter((item) => item.uid !== file.uid));
                                 } catch (error) {
