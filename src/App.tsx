@@ -26,7 +26,7 @@ const router = createBrowserRouter([
 const items = [
   {
     key: '/',
-    label: 'Home',
+    label: 'Quản lý bất động sản',
     icon: <HomeOutlined />,
   }
 ];
